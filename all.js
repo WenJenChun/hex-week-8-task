@@ -10,17 +10,24 @@ const cartList = document.querySelector(".shoppingCart-table tbody");
 const cartTotalPrice = document.querySelector("#cartTotalPrice");
 const discardAllBtn = document.querySelector(".discardAllBtn");
 
+function init(){
+    renderProducts();
+    getCartList();
+}
+
+init();
+
 function renderProducts(){
   axios.get(`https://livejs-api.hexschool.io/api/livejs/v1/customer/${api_path}/products`)
     .then((res)=>{
-        console.log(res.data.products);
+        // console.log(res.data.products);
         productData = res.data.products;
         let str = "";
         productData.forEach((item)=>{
             str += `<li class="productCard">
             <h4 class="productType">新品</h4>
             <img src="${item.images}" alt="">
-            <a href="#" class="addCardBtn" data-product-id="${item.id}">加入購物車</a>
+            <a href="#" class="addCardBtn" data-product-title="${item.title}" data-product-id="${item.id}">加入購物車</a>
             <h3>${item.title}</h3>
             <del class="originPrice">NT$${item.origin_price}</del>
             <p class="nowPrice">NT$${item.price}</p>
@@ -33,10 +40,12 @@ function renderProducts(){
             item.addEventListener("click",(e)=>{
                 e.preventDefault();
                 let productId = e.target.dataset.productId;
-                console.log(productId);
+                // console.log(productId);
                 addTOCart(productId, 1);
+                alert(`已將${e.target.dataset.productTitle}加入購物車`);
+                
                 //在這邊沒有及時 render，要用 location.reload(); 或 assync await?
-                renderCartList();
+                
                 
             });
         });
@@ -48,14 +57,12 @@ function renderProducts(){
   });
 }
 
-renderProducts()
-
-function renderCartList(){
-  axios.get(`https://livejs-api.hexschool.io/api/livejs/v1/customer/${api_path}/carts`)
-    .then((res)=>{
-    cartData = res.data.carts;
-
-    if(cartData.length === 0){
+function getCartList(){
+    axios.get(`https://livejs-api.hexschool.io/api/livejs/v1/customer/${api_path}/carts`)
+      .then((res)=>{
+      cartData = res.data.carts;
+      console.log(cartData);
+      if(cartData.length === 0){
         cartSection.innerHTML = `<p>您尚未加入任何商品</p>`;
     } else {
         let str = "";
@@ -75,7 +82,7 @@ function renderCartList(){
             <td>${item.quantity}</td>
             <td>NT$${itemTotalPrice}</td>
             <td class="discardBtn">
-                <a href="#" class="material-icons">
+                <a href="#" class="material-icons" data-product-title="${item.product.title}" data-cart-id="${item.id}">
                     clear
                 </a>
             </td>
@@ -83,14 +90,27 @@ function renderCartList(){
         });
         cartList.innerHTML = str;
         cartTotalPrice.textContent = `NT$${finalPrice}`;
+
+        const deleteBtns = document.querySelectorAll(".discardBtn .material-icons");
+        deleteBtns.forEach((item)=>{
+            item.addEventListener("click",(e)=>{
+                e.preventDefault();
+                // console.log(e.target.dataset.cartId);
+                alert(`成功刪除${e.target.dataset.productTitle}`);
+                deleteCartItem(e.target.dataset.cartId);
+                
+            });
+            
+        });
+        
     }
+      
     
-  }).catch((err)=>{
-    console.log(err);
-  });
+    }).catch((err)=>{
+      console.log(err);
+    });
 }
 
-renderCartList()
 
 function addTOCart(productId, quantity){
   axios.post(`https://livejs-api.hexschool.io/api/livejs/v1/customer/${api_path}/carts`, 
@@ -102,56 +122,94 @@ function addTOCart(productId, quantity){
   )
     .then((res)=>{
     console.log(res.data);
-    location.reload();
+   
+    getCartList();
+    location.reload(); //如果不加的話有時候不會即時更新
+    
   }).catch((error)=>{
     console.log(error.data);
   });
 }
 
-// addTOCart();
 
 discardAllBtn.addEventListener("click",function(e){
+    e.preventDefault();
     deleteAll();
-    renderCartList();
 });
 
 function deleteAll(){
     axios.delete(`https://livejs-api.hexschool.io/api/livejs/v1/customer/${api_path}/carts`)
     .then((res)=>{
         console.log(res);
-        location.reload();
+        alert("您已清空購物車");
+        getCartList();
     })
     .catch((err)=>{
         console.log(err)
     });
 }
 
-// deleteAll()
 
-function deleteCartItem(cartIemtId){
-    axios.delete(`https://livejs-api.hexschool.io/api/livejs/v1/customer/${api_path}/carts/${cartIemtId}`)
+function deleteCartItem(cartItemId){
+    axios.delete(`https://livejs-api.hexschool.io/api/livejs/v1/customer/${api_path}/carts/${cartItemId}`)
     .then((res)=>{
         console.log(res);
+        getCartList();
     })
     .catch((err)=>{
         console.log(err)
     });
 }
+const orderInfoForm = document.querySelector(".orderInfo-form");
+const customerName = document.querySelector("#customerName");
+const customerPhone = document.querySelector("#customerPhone");
+const customerEmail = document.querySelector("#customerEmail");
+const customerAddres = document.querySelector("#customerAddress");
+const tradeWay = document.querySelector("#tradeWay");
+const orderBtn = document.querySelector("#orderBtn");
 
-function postOrder(){
-    axios.post(`https://livejs-api.hexschool.io/api/livejs/v1/customer/${api_path}/orders`,
+tradeWay.addEventListener("change",(e)=>{
+    // console.log(tradeWay.value);
+});
+
+orderBtn.addEventListener("click",(e)=>{
+    e.preventDefault();
+    if(customerName.value===""||customerPhone.value===""||customerEmail.value===""||customerAddres.value===""){
+        alert("請填入完整資訊");
+    } else if (cartData.length === 0){
+        alert("購物車是空的！");
+
+    } else {
+        let obj = {};
+        obj.name = customerName.value;
+        obj.tel = customerPhone.value;
+        obj.email = customerEmail.value;
+        obj.address = customerAddres.value;
+        obj.payment = tradeWay.value;
+        postOrder(obj);
+        
+    }
+
+});
+function postOrder(orderObj){
+        axios.post(`https://livejs-api.hexschool.io/api/livejs/v1/customer/${api_path}/orders`,
     {
         "data": {
-          "user": {
-            "name": "六角學院",
-            "tel": "07-5313506",
-            "email": "hexschool@hexschool.com",
-            "address": "高雄市六角學院路",
-            "payment": "Apple Pay"
-          }
+          "user": orderObj
+        //   {
+        //     "name": "六角學院",
+        //     "tel": "07-5313506",
+        //     "email": "hexschool@hexschool.com",
+        //     "address": "高雄市六角學院路",
+        //     "payment": "Apple Pay"
+        //   }
         }
       }).then((res)=>{
         console.log(res)
+        alert("成功送出訂單");
+        orderInfoForm.reset();
+
+
     }).catch((err)=>{
         console.log(err)
     });
