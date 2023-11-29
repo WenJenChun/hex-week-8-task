@@ -111,7 +111,6 @@ function getCartList(){
     });
 }
 
-
 function addTOCart(productId, quantity){
   axios.post(`https://livejs-api.hexschool.io/api/livejs/v1/customer/${api_path}/carts`, 
   {
@@ -131,7 +130,6 @@ function addTOCart(productId, quantity){
   });
 }
 
-
 discardAllBtn.addEventListener("click",function(e){
     e.preventDefault();
     deleteAll();
@@ -149,7 +147,6 @@ function deleteAll(){
     });
 }
 
-
 function deleteCartItem(cartItemId){
     axios.delete(`https://livejs-api.hexschool.io/api/livejs/v1/customer/${api_path}/carts/${cartItemId}`)
     .then((res)=>{
@@ -160,6 +157,7 @@ function deleteCartItem(cartItemId){
         console.log(err)
     });
 }
+
 const orderInfoForm = document.querySelector(".orderInfo-form");
 const customerName = document.querySelector("#customerName");
 const customerPhone = document.querySelector("#customerPhone");
@@ -167,35 +165,70 @@ const customerEmail = document.querySelector("#customerEmail");
 const customerAddres = document.querySelector("#customerAddress");
 const tradeWay = document.querySelector("#tradeWay");
 const orderBtn = document.querySelector("#orderBtn");
-
+let isFormValid = false;
 tradeWay.addEventListener("change",(e)=>{
     // console.log(tradeWay.value);
 });
 
+function validateForm(){
+    
+    const validMessages = document.querySelectorAll('p.orderInfo-message');
+    validMessages.forEach((item)=>{
+        if(item.dataset.message==="姓名" && validator.isEmpty(customerName.value)){
+            item.textContent="請填寫名稱";
+            isFormValid = false;
+        } else if (item.dataset.message==="電話" && !validator.isMobilePhone(customerPhone.value, 'zh-TW')){
+            item.textContent="請填寫正確手機號碼";
+            isFormValid = false;
+        } else if (item.dataset.message==="Email" && !validator.isEmail(customerEmail.value)){
+            item.textContent="請填寫正確 Email";
+            isFormValid = false;
+        } else if (item.dataset.message==="寄送地址" && validator.isEmpty(customerAddres.value)){
+            item.textContent="請填寫地址";
+            isFormValid = false;
+        } else {
+            item.textContent="";
+            isFormValid = true
+        }
+    });
+
+    
+   
+    
+
+}
+
 orderBtn.addEventListener("click",(e)=>{
     e.preventDefault();
-    if(customerName.value===""||customerPhone.value===""||customerEmail.value===""||customerAddres.value===""){
-        alert("請填入完整資訊");
-    } else if (cartData.length === 0){
-        alert("購物車是空的！");
+   
+    // if (cartData.length === 0){
+    //     alert("購物車是空的！");
+    //     return;
+    // }
+    //三元運算符含 return 寫法：
+    if (cartData.length === 0) return alert("購物車是空的！");
 
-    } else {
-        let obj = {};
-        obj.name = customerName.value;
-        obj.tel = customerPhone.value;
-        obj.email = customerEmail.value;
-        obj.address = customerAddres.value;
-        obj.payment = tradeWay.value;
-        postOrder(obj);
-        
-    }
+    validateForm();
+    if (isFormValid) {
+        postOrder();
+    } 
+   
 
 });
-function postOrder(orderObj){
+
+//送出訂單
+function postOrder(){
+    let obj = {};
+    obj.name = customerName.value;
+    obj.tel = customerPhone.value;
+    obj.email = customerEmail.value;
+    obj.address = customerAddres.value;
+    obj.payment = tradeWay.value;
+    
         axios.post(`https://livejs-api.hexschool.io/api/livejs/v1/customer/${api_path}/orders`,
     {
         "data": {
-          "user": orderObj
+          "user": obj
         //   {
         //     "name": "六角學院",
         //     "tel": "07-5313506",
@@ -207,11 +240,13 @@ function postOrder(orderObj){
       }).then((res)=>{
         console.log(res)
         alert("成功送出訂單");
-        orderInfoForm.reset();
-
+        // orderInfoForm.reset();
+        window.location.reload();
+        window.scrollTo(0, 0);
 
     }).catch((err)=>{
-        console.log(err)
+        console.log(err);
+        alert("訂單送出失敗");
     });
 }
 
