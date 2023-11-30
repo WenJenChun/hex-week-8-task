@@ -50,13 +50,12 @@ function renderProducts(){
             });
         });
 
-
-        
   }).catch((err)=>{
     console.log(err);
   });
 }
 
+//get&render 購物車
 function getCartList(){
     axios.get(`https://livejs-api.hexschool.io/api/livejs/v1/customer/${api_path}/carts`)
       .then((res)=>{
@@ -101,22 +100,22 @@ function getCartList(){
             });    
         });
     }
+
     }).catch((err)=>{
       console.log(err);
     });
 }
 
-function addTOCart(productId, quantity){
+async function addTOCart(productId, quantity){
+   
   axios.post(`https://livejs-api.hexschool.io/api/livejs/v1/customer/${api_path}/carts`, 
   {
     data: {
     "productId": productId,
     "quantity": quantity
     }}
-  )
-    .then((res)=>{
+  ).then((res)=>{
     console.log(res.data);
-   
     getCartList();
     location.reload(); //如果不加的話有時候不會即時更新
     
@@ -130,6 +129,7 @@ discardAllBtn.addEventListener("click",function(e){
     deleteAll();
 });
 
+//刪除購物車全部品項
 function deleteAll(){
     axios.delete(`https://livejs-api.hexschool.io/api/livejs/v1/customer/${api_path}/carts`)
     .then((res)=>{
@@ -142,6 +142,7 @@ function deleteAll(){
     });
 }
 
+//刪除購物車單一品項
 function deleteCartItem(cartItemId){
     axios.delete(`https://livejs-api.hexschool.io/api/livejs/v1/customer/${api_path}/carts/${cartItemId}`)
     .then((res)=>{
@@ -161,38 +162,49 @@ const customerAddres = document.querySelector("#customerAddress");
 const tradeWay = document.querySelector("#tradeWay");
 const orderBtn = document.querySelector("#orderBtn");
 let isFormValid = false;
+//選擇付款方式
 tradeWay.addEventListener("change",(e)=>{
     // console.log(tradeWay.value);
 });
 
+//驗證預定資料表單
 function validateForm(){
-    
     const validMessages = document.querySelectorAll('p.orderInfo-message');
     validMessages.forEach((item)=>{
-        if(item.dataset.message==="姓名" && validator.isEmpty(customerName.value)){
-            item.textContent="請填寫名稱";
-            isFormValid = false;
-        } else if (item.dataset.message==="電話" && !validator.isMobilePhone(customerPhone.value, 'zh-TW')){
-            item.textContent="請填寫正確手機號碼";
-            isFormValid = false;
-        } else if (item.dataset.message==="Email" && !validator.isEmail(customerEmail.value)){
-            item.textContent="請填寫正確 Email";
-            isFormValid = false;
-        } else if (item.dataset.message==="寄送地址" && validator.isEmpty(customerAddres.value)){
-            item.textContent="請填寫地址";
-            isFormValid = false;
-        } else {
-            item.textContent="";
-            isFormValid = true
-        }
+        if(item.dataset.message==="姓名"){
+            if(validator.isEmpty(customerName.value)){
+                item.textContent="請填寫名稱";
+            } else {
+                item.textContent="";
+                isFormValid = true;
+            }
+        } else if (item.dataset.message==="電話"){
+            if(validator.isEmpty(customerPhone.value)||!validator.isMobilePhone(customerPhone.value, 'zh-TW')){
+                item.textContent="請填寫正確手機號碼"
+                isFormValid = false;
+            } else {
+                item.textContent="";
+            }
+        } else if (item.dataset.message==="Email"){
+            if(validator.isEmpty(customerEmail.value)||!validator.isEmail(customerEmail.value)){
+                item.textContent="請填寫正確 Email";
+                isFormValid = false;
+            }else {
+                item.textContent="";
+            }
+        } else if (item.dataset.message==="寄送地址"){
+            if(validator.isEmpty(customerAddres.value)||validator.isEmpty(customerAddres.value)){
+                item.textContent="請填寫地址";
+                isFormValid = false;
+            }else {
+                item.textContent="";
+            }
+        } 
+        console.log(isFormValid);
     });
-
-    
-   
-    
-
 }
 
+//送出訂單btn監聽
 orderBtn.addEventListener("click",(e)=>{
     e.preventDefault();
    
@@ -207,7 +219,6 @@ orderBtn.addEventListener("click",(e)=>{
     if (isFormValid) {
         postOrder();
     } 
-   
 
 });
 
@@ -235,8 +246,9 @@ function postOrder(){
       }).then((res)=>{
         console.log(res)
         alert("成功送出訂單");
-        // orderInfoForm.reset();
-        window.location.reload();
+        getCartList();
+        orderInfoForm.reset();
+        // window.location.reload();
         window.scrollTo(0, 0);
 
     }).catch((err)=>{
