@@ -98,14 +98,9 @@ function getCartList(){
                 // console.log(e.target.dataset.cartId);
                 alert(`成功刪除${e.target.dataset.productTitle}`);
                 deleteCartItem(e.target.dataset.cartId);
-                
-            });
-            
+            });    
         });
-        
     }
-      
-    
     }).catch((err)=>{
       console.log(err);
     });
@@ -250,18 +245,4 @@ function postOrder(){
     });
 }
 
-function getAllOrders(){
-    axios.get(`https://livejs-api.hexschool.io/api/livejs/v1/admin/${api_path}/orders`,
-    {
-        headers: {
-            'Authorization': token
-          }
-    })
-    .then((res)=>{
-        console.log(res);
-    })
-    .catch((err)=>{
-        console.log(err);
-    });
 
-}

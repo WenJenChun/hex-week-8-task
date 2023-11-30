@@ -803,7 +803,12 @@ body {
   left: 0;
   display: block;
   text-decoration: none;
-  color: #FFFFFF;
+  /* color: white; */
+  /* color: #0067CE; */
+}
+
+.orderStatus a:visited {
+  color: #0067CE; 
 }
 
 .orderStatus-unDone {
@@ -834,3 +839,4 @@ body {
   display: none;
 }
 /*# sourceMappingURL=all.css.map */
+
